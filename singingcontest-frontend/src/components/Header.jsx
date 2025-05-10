@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 
 function Header() {
   return (
-    <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
-      <Link to="/" className="text-2xl font-bold">Singing Contest</Link>
-      <nav>
-        <Link to="/" className="mr-4">Home</Link>
-        <Link to="/login" className="mr-4">Login</Link>
-        <Link to="/signup" className="bg-blue-500 px-4 py-2 rounded-full hover:bg-blue-600 transition">
+    <header className="bg-white shadow-md p-4 flex justify-between items-center">
+      <Link to="/" className="text-2xl font-bold text-blue-600">Singing Contest</Link>
+      <nav className="flex gap-4">
+        <Link to="/" className="text-blue-600 hover:underline">Home</Link>
+        <Link to="/login" className="text-blue-600 hover:underline">Login</Link>
+        <Link to="/signup" className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition">
           Sign Up
         </Link>
       </nav>
