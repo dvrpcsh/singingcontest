@@ -5,6 +5,34 @@ import KakaoIcon from "../assets/social-icons/kakao.png";
 import GithubIcon from "../assets/social-icons/github.png";
 
 function Signup() {
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const navigate = useNavigate();
+
+
+    const handleSignup = async () => {
+        const response = await fetch("http://localhost:8080/api/auth/signup", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                password: password
+            })
+        });
+
+        if(response.ok) {
+            alert("회원가입 성공!");
+            navigate("/login");
+        } else {
+            const message = await response.text();
+            alert(`회원가입 실패: ${message}`);
+        }
+    }
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50">
             <div className="bg-white p-8 rounded-lg shadow-lg w-96">
