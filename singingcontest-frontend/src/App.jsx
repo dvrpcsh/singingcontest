@@ -3,6 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import "./index.css";
 
 function App() {
@@ -11,6 +13,8 @@ function App() {
         <Header />
         <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/Signup" element={<Signup />} />
         </Routes>
         <Footer />
     </div>

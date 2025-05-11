@@ -1,5 +1,4 @@
 import React from "react";
-import SampleVideo from "../assets/react.svg";
 
 // 샘플 비디오 데이터
 const videos = [
