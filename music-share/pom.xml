@@ -77,6 +77,12 @@
 			<artifactId>jjwt-jackson</artifactId> <!-- Jackson 사용 -->
 			<version>0.11.5</version>
 		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.30</version>
+			<scope>provided</scope>
+		</dependency>
 
 	</dependencies>
 
