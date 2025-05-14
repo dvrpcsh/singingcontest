@@ -1,6 +1,8 @@
 package com.singingcontest.controller;
 
 import com.singingcontest.domain.User;
+import com.singingcontest.dto.LoginRequest;
+import com.singingcontest.dto.LoginResponse;
 import com.singingcontest.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,7 +36,7 @@ public class UserController {
 
         User savedUser = userService.registerUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
-     }
+    }
 
     /**
      * 이메일 중복 확인 API
@@ -52,5 +54,18 @@ public class UserController {
     public ResponseEntity<Boolean> checkNickname(@RequestParam String nickname) {
         boolean duplicated = userService.isNicknameDuplicated(nickname);
         return ResponseEntity.ok(duplicated);
+    }
+
+    /**
+     * 로그인 API
+     * -이메일과 비밀번호를 확인하고 JWT토큰발급
+     * @param request 이메일+비밀번호
+     * @return 로그인 성공 시 사용자 정보 + JWT토큰 반환
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        LoginResponse response = userService.login(request);
+
+        return ResponseEntity.ok(response);
     }
 }
