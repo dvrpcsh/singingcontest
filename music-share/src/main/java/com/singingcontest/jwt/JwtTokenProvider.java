@@ -65,4 +65,20 @@ public class JwtTokenProvider {
 
         return claims.getSubject();
     }
+
+    /**
+     * 주어진 JWT 토큰에서 만료시간 추출
+     * @param token JWT문자열
+     * @param 남은 만료 시간(밀리초단위)
+     */
+    public long getExpiration(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey) //비밀키로 파싱
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        Date expiration = claims.getExpiration(); //exp클레임
+
+        return expiration.getTime() - System.currentTimeMillis(); //현재 시간 기준으로 남은 시간(ms)
+    }
 }
