@@ -3,12 +3,15 @@ package com.singingcontest.controller;
 import com.singingcontest.domain.User;
 import com.singingcontest.dto.LoginRequest;
 import com.singingcontest.dto.LoginResponse;
+import com.singingcontest.dto.RefreshTokenRequest;
 import com.singingcontest.jwt.JwtTokenProvider;
 import com.singingcontest.jwt.TokenBlacklistService;
+import com.singingcontest.service.RedisService;
 import com.singingcontest.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
@@ -25,6 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class UserController {
 
     private final UserService userService;
+    private final RedisService redisService;
 
     //블랙리스트 방식을 통한 로그아웃을 위한 의존성 주입
     private final JwtTokenProvider jwtTokenProvider;
@@ -68,16 +72,35 @@ public class UserController {
     }
 
     /**
-     * 로그인 API
+     * 로그인 API (Access + Refresh Token 발급 포함)
      * -이메일과 비밀번호를 확인하고 JWT토큰발급
      * @param request 이메일+비밀번호
-     * @return 로그인 성공 시 사용자 정보 + JWT토큰 반환
+     * @return 로그인 성공 시 사용자 정보 + JWT토큰 반환 + RefreshToken은 Redis에 저장(만료시간 7일)
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        LoginResponse response = userService.login(request);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
-        return ResponseEntity.ok(response);
+        //로그인 처리(UserService에서 이메일/비밀번호 검증)
+        User user = userService.login(request.getEmail(), request.getPassword());
+
+        if(user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        //토큰 생성
+        String accessToken = jwtTokenProvider.createToken(user.getEmail());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
+
+        //RefreshToken을 Redis에 저장(7일 = 60분 * 24시간 * 7일)
+        redisService.saveRefreshToken(user.getEmail(), refreshToken, 60*24*7);
+
+        //토큰 응답 생성
+        Map<String, String> tokenResponse = new HashMap<>();
+
+        tokenResponse.put("accessToken", accessToken);
+        tokenResponse.put("refreshToken", refreshToken);
+
+        return ResponseEntity.ok(tokenResponse);
     }
 
     /**
@@ -134,5 +157,44 @@ public class UserController {
         }
 
         return ResponseEntity.ok("로그아웃 완료 (토큰 무료화됨)");
+    }
+
+    /**
+     * AccessToken 재발급 API
+     * -클라이언트가 만료된 AccessToken 대신 RefreshToken을 보내면 서버가 새 AccessToken을 발급해주는 API
+     *
+     * @param request RefreshToken을 담은 요청 바디
+     * @return 새로운 AccessToken 반환
+     */
+    @PostMapping("/reissue")
+    public ResponseEntity<?> reissueToken(@RequestBody RefreshTokenRequest request) {
+
+        //1.클라이언트가 보낸 RefreshToken 추출
+        String refreshToken = request.getRefreshToken();
+
+        //2.RefreshToken 유효성 검사(형식 + 만료 확인)
+        if(!jwtTokenProvider.validateToken(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        //3.RefreshToken에서 이메일(사용자 식별자) 추출
+        String email = jwtTokenProvider.getEmailFromToken(refreshToken);
+
+        //4.Redis에 저장된 RefreshToken을 가져옴(로그아웃 여부 또는 탈취 검증)
+        String savedToken = redisService.getRefreshToken(email);
+
+        //5.저장된 토큰이 없거나 일치하지 않으면 유효하지않은 요청 처리
+        if(savedToken == null || !savedToken.equals(refreshToken)) {
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("이미 만료되었거나 위조된 토큰입니다.");
+        }
+
+        //6. 새로운 AccessToken생성
+        String newAccessToken = jwtTokenProvider.createToken(email);
+
+        //7.응답: 새로 발급된 AccessToken만 반환
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 }

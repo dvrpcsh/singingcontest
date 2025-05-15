@@ -21,6 +21,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisService redisService; //Redis 연동 추가
 
     /**
      * 사용자 회원가입 처리
@@ -76,25 +77,31 @@ public class UserService {
      * 로그인 처리
      * - 입력된 이메일로 사용자 검색
      * - 비밀번호 일치 여부 확인
-     * - 토큰 생성 후 응답 객체(loginResponse)로 반환
-     * @param request LoginRequest(email + password)
-     * @return 로그인 결과 응답 DTO(이메일, 닉네임, JWT토큰 포함)
+     * - AccessToken + RefreshToken 생성
+     * - RefreshToken을 Redis에 저장
+     * @param reqeuest 이메일+비밀번호
+     * @return 로그인 결과 응답 DTO(이메일, 닉네임, accesstoken, refreshtoken포함)
      */
     public LoginResponse login(LoginRequest request) {
 
-        //사용자 존재 여부 확인
+        //1.사용자 존재 여부 확인
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        //비밀번호 일치 여부 확인
+        //2.비밀번호 일치 여부 확인
         if(!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        //이메일을 기반으로 JWT토큰 생성
-        String token = jwtTokenProvider.generateToken(user.getEmail());
+        //3.토큰 생성
+        String accessToken = jwtTokenProvider.createToken(user.getEmail());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
 
-        //응답 DTO 구성 후 반환
-        return new LoginResponse(user.getEmail(), user.getNickname(), token);
+        //4.Redis에 RefreshToken 저장(7일 유효)
+        redisService.saveRefreshToken(user.getEmail(), refreshToken, 60 * 24 * 7);//분 단위
+
+        //5.응답 DTO 생성
+        return new LoginResponse(user.getEmail(), user.getNickname(), accessToken, refreshToken);
+
     }
 }

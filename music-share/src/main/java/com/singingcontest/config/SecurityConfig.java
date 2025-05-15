@@ -1,6 +1,7 @@
 package com.singingcontest.config;
 
 import com.singingcontest.jwt.JwtAuthenticationFilter;
+import com.singingcontest.security.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ public class SecurityConfig {
 
     // JWT 인증 필터 주입
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     /**
      * 비밀번호 암호화를 위한 PasswordEncoder Bean 등록
@@ -55,7 +57,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) //CSRF토큰사용X
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //JWT기반: 세션 X
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) //세션사용안함(JWT기반)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/users/signup",
@@ -65,6 +67,8 @@ public class SecurityConfig {
                         ).permitAll() //이 경로들은 인증 없이 접근 허용
                         .anyRequest().authenticated() //그 외 모든 요청은 인증 필수
                 )
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))//예외처리 등록
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); //JWT 필터 등록
 
         return http.build();

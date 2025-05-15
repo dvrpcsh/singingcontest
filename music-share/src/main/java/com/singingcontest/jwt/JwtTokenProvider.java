@@ -14,26 +14,54 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    //예시 비밀키(환경변수로 분리하는 것이 좋음)
+    //예시 비밀키(운영 환경에서는 환경변수나 암호화된 config에서 불러오는 것이 좋음)
     private String secretKey = "my-sercet-key-sanghyeop-key";
 
     //JWT 서명을 위한 키 객체
     private Key key;
 
-    //토큰 유효 시간(1시간)
-    private final long tokenValidityInMilliseconds = 1000 * 60 * 60;
+    //Access Token 유효 시간: 1시간
+    private final long accessTokenValidityInMilliseconds = 1000 * 60 * 60;
 
+    //Refresh Token 유효 시간:7일
+    private final long refreshTokenValidityInMilliseconds = 1000L * 60 * 60 * 24 * 7;
+
+    /**
+     * Bean 생성 후 key초기화
+     * secretKey 문자열을 이용하여 HMAC-SHA 암호화 키 생성
+     */
     @PostConstruct
     protected void init() {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
     /**
-     * JWT토큰생성
+     * AccessToken 생성
+     *
+     * @param email 사용자의 고유 식별자(Subject에 해당)
+     * @return JWT Access Token 문자열
      */
-    public String generateToken(String email) {
+    public String createToken(String email) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + tokenValidityInMilliseconds);
+        Date expiry = new Date(now.getTime() + accessTokenValidityInMilliseconds);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * RefreshToken 생성
+     *
+     * @param email 사용자의 고유 식별자
+     * @return JWT Refresh Token 문자열
+     */
+    public String createRefreshToken(String email) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
 
         return Jwts.builder()
                 .setSubject(email)
@@ -45,6 +73,10 @@ public class JwtTokenProvider {
 
     /**
      * 토큰 유효성 검증
+     * - 토큰 서명, 구조, 만료일 확인
+     *
+     * @param token 검사할 JWT문자열
+     * @return 유효하면 true, 유효하지 않으면 false 반환
      */
     public boolean validateToken(String token) {
         try {
@@ -58,6 +90,9 @@ public class JwtTokenProvider {
 
     /**
      * 토큰에서 이메일 추출
+     *
+     * @param token JWT 문자열
+     * @return 이메일 문자열
      */
     public String getEmailFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build()
