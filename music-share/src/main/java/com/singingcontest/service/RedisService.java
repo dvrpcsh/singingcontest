@@ -32,7 +32,7 @@ public class RedisService {
      * @param token 저장할 Refresh Token
      * @param expirationMinutes 만료 시간(분 단위)
      */
-    public void saveRefreshToken(String key, String Token, long expirationMinutes) {
+    public void saveRefreshToken(String key, String token, long expirationMinutes) {
         redisTemplate.opsForValue().set(key, token, expirationMinutes, TimeUnit.MINUTES);
     }
 

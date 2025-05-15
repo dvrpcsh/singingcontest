@@ -83,7 +83,7 @@ public class UserController {
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
         //로그인 처리(UserService에서 이메일/비밀번호 검증)
-        User user = userService.login(request.getEmail(), request.getPassword());
+        LoginResponse user = userService.login(request);
 
         if(user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
