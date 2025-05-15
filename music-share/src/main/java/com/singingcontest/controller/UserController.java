@@ -8,12 +8,14 @@ import com.singingcontest.jwt.JwtTokenProvider;
 import com.singingcontest.jwt.TokenBlacklistService;
 import com.singingcontest.service.RedisService;
 import com.singingcontest.service.UserService;
+import com.singingcontest.dto.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+
 
 import java.util.Map;
 import java.util.HashMap;
@@ -196,5 +198,38 @@ public class UserController {
 
         //7.응답: 새로 발급된 AccessToken만 반환
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+    }
+
+    /**
+     * 사용자 정보 수정 API
+     *
+     * 로그인 한 사용자의 이메일을 기준으로 닉네임/비밀번호 수정
+     */
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUser(@RequestBody UserUpdateRequest request, Authentication authentication) {
+
+        //SecurityContext에서 사용자 이메일 추출
+        String email = String.valueOf(authentication.getPrincipal());
+
+        //수정 로직 호출
+        User updatedUser = userService.updateUser(email, request);
+
+        return ResponseEntity.ok().body(Map.of(
+                "message", "회원정보가 수정되었습니다.",
+                "nickname", updatedUser.getNickname()
+        ));
+    }
+
+    /**
+     * 회원탈퇴
+     * JWT기반 인증된 사용자만 자신의 계정을 삭제 가능
+     */
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteUser(Authentication authentication) {
+        String email = String.valueOf(authentication.getPrincipal());
+
+        userService.deleteUser(email);
+
+        return ResponseEntity.ok().body("회원 탈퇴가 완료되었습니다.");
     }
 }

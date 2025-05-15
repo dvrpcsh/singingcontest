@@ -3,6 +3,7 @@ package com.singingcontest.service;
 import com.singingcontest.domain.User;
 import com.singingcontest.dto.LoginRequest;
 import com.singingcontest.dto.LoginResponse;
+import com.singingcontest.dto.UserUpdateRequest;
 import com.singingcontest.jwt.JwtTokenProvider;
 import com.singingcontest.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -103,5 +104,43 @@ public class UserService {
         //5.응답 DTO 생성
         return new LoginResponse(user.getEmail(), user.getNickname(), accessToken, refreshToken);
 
+    }
+
+    /**
+     * 사용자 정보 수정
+     *
+     * @param email 로그인 한 사용자 이메일(JWT에서 추출)
+     * @param request 닉네임 및 비밀번호 수정 정보
+     * @param 수정된 사용자 객체
+     */
+    @Transactional
+    public User updateUser(String email, UserUpdateRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        //닉네임이 전달되었을 경우만 수정
+        if(request.getNickname() != null && !request.getNickname().isBlank()) {
+            user.setNickname(request.getNickname());
+        }
+
+        //비밀번호가 전달되었을 경우만 수정
+        if(request.getPassword() != null && !request.getPassword().isBlank()) {
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
+            user.setPassword(encodedPassword);
+        }
+
+        return userRepository.save(user); //저장 후 객체 반환
+    }
+
+    /**
+     * 회원탈퇴
+     * @param eamil 로그인 한 사용자 이메일(JWT에서 추출)
+     */
+    @Transactional
+    public void deleteUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        userRepository.delete(user);
     }
 }
