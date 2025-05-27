@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# application.properties 파일 무시
+src/main/resources/application.properties
+

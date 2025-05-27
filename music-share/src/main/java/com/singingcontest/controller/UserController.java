@@ -12,10 +12,8 @@ import com.singingcontest.dto.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
-
 
 import java.util.Map;
 import java.util.HashMap;
@@ -25,7 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * 사용자 회원가입 및 유효성 검사 API
  */
 @RestController
-@RequestMapping("/api/Users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
