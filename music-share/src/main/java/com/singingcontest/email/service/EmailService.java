@@ -6,7 +6,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeUnit.TimeUnit;
 
 /**
  * EmailService
@@ -22,7 +21,7 @@ public class EmailService {
     //Redis 문자열 키-값 저장소 주입
     private final StringRedisTemplate redisTemplate;
 
-    //인증코드 유효시간(단위: 초_
+    //인증코드 유효시간(단위: 초)
     private static final long CODE_TTL = 180;
 
     /**
